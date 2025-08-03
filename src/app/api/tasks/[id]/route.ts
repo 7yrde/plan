@@ -3,11 +3,12 @@ import { getDatabase } from '@/lib/database';
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { status } = await request.json();
-    const taskId = parseInt(params.id);
+    const { id } = await params;
+    const taskId = parseInt(id);
     
     const db = getDatabase();
     const completedAt = status === 'completed' ? new Date().toISOString() : null;
@@ -32,10 +33,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const taskId = parseInt(params.id);
+    const { id } = await params;
+    const taskId = parseInt(id);
     
     const db = getDatabase();
     db.prepare('DELETE FROM tasks WHERE id = ?').run(taskId);

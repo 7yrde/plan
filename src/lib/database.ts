@@ -22,6 +22,7 @@ export function initDatabase() {
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
       color TEXT NOT NULL,
       icon TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -57,22 +58,40 @@ export function initDatabase() {
     )
   `);
 
+  // 기존 categories 테이블에 slug 컬럼 추가 (없는 경우)
+  try {
+    db.exec('ALTER TABLE categories ADD COLUMN slug TEXT');
+  } catch (error) {
+    // 컬럼이 이미 존재하는 경우 무시
+  }
+
   // 기본 주제 데이터 삽입
   const categories = [
-    { name: '컴퓨터', color: '#3B82F6', icon: '💻' },
-    { name: '음악', color: '#8B5CF6', icon: '🎵' },
-    { name: '건강', color: '#10B981', icon: '💪' },
-    { name: '돈', color: '#F59E0B', icon: '💰' },
-    { name: '언어', color: '#EF4444', icon: '🌍' }
+    { name: '컴퓨터', slug: 'computer', color: '#22C55E', icon: '💻' },
+    { name: '음악', slug: 'music', color: '#22C55E', icon: '🎵' },
+    { name: '건강', slug: 'health', color: '#22C55E', icon: '💪' },
+    { name: '돈', slug: 'money', color: '#22C55E', icon: '💰' },
+    { name: '언어', slug: 'language', color: '#22C55E', icon: '🌍' }
   ];
 
   const insertCategory = db.prepare(`
-    INSERT OR IGNORE INTO categories (name, color, icon) VALUES (?, ?, ?)
+    INSERT OR IGNORE INTO categories (name, slug, color, icon) VALUES (?, ?, ?, ?)
   `);
 
   categories.forEach(category => {
-    insertCategory.run(category.name, category.color, category.icon);
+    insertCategory.run(category.name, category.slug, category.color, category.icon);
   });
+
+  // 기존 카테고리의 slug 업데이트
+  const updateCategory = db.prepare(`
+    UPDATE categories SET slug = ?, color = ? WHERE name = ?
+  `);
+  
+  updateCategory.run('computer', '#22C55E', '컴퓨터');
+  updateCategory.run('music', '#22C55E', '음악');
+  updateCategory.run('health', '#22C55E', '건강');
+  updateCategory.run('money', '#22C55E', '돈');
+  updateCategory.run('language', '#22C55E', '언어');
 
   // 기본 사용자 생성 (oyako/secretweapon)
   const insertUser = db.prepare(`

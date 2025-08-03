@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 interface Category {
   id: number;
   name: string;
+  slug: string;
   color: string;
   icon: string;
 }
@@ -18,29 +19,25 @@ interface AddGoalModalProps {
   onGoalAdded: () => void;
 }
 
-export default function AddGoalModal({ 
-  isOpen, 
-  onClose, 
-  categories, 
-  currentYear, 
-  onGoalAdded 
+export default function AddGoalModal({
+  isOpen,
+  onClose,
+  categories,
+  currentYear,
+  onGoalAdded
 }: AddGoalModalProps) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [categoryId, setCategoryId] = useState<number | ''>('');
-  const [targetDate, setTargetDate] = useState('');
+  const [formData, setFormData] = useState({
+    category_id: '',
+    title: '',
+    description: '',
+    target_date: ''
+  });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!title.trim() || !categoryId) {
-      alert('제목과 카테고리를 입력해주세요.');
-      return;
-    }
-
     setLoading(true);
-    
+
     try {
       const response = await fetch('/api/goals', {
         method: 'POST',
@@ -48,27 +45,25 @@ export default function AddGoalModal({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          category_id: categoryId,
-          year: currentYear,
-          title: title.trim(),
-          description: description.trim(),
-          target_date: targetDate || null,
+          ...formData,
+          year: currentYear
         }),
       });
 
       if (response.ok) {
-        setTitle('');
-        setDescription('');
-        setCategoryId('');
-        setTargetDate('');
+        setFormData({
+          category_id: '',
+          title: '',
+          description: '',
+          target_date: ''
+        });
         onGoalAdded();
         onClose();
       } else {
-        alert('목표 추가에 실패했습니다.');
+        console.error('목표 추가 실패');
       }
     } catch (error) {
-      console.error('목표 추가 오류:', error);
-      alert('목표 추가 중 오류가 발생했습니다.');
+      console.error('목표 추가 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -77,32 +72,41 @@ export default function AddGoalModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            새 목표 추가
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* 배경 오버레이 */}
+      <div
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* 모달 */}
+      <div className="relative bg-card rounded-lg shadow-xl border border-border w-full max-w-md mx-4">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="text-lg font-semibold text-card-foreground">새 목표 추가</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* 폼 */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* 카테고리 선택 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              카테고리 *
+            <label htmlFor="category" className="block text-sm font-medium text-card-foreground mb-2">
+              카테고리
             </label>
             <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              id="category"
+              value={formData.category_id}
+              onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
               required
             >
-              <option value="">카테고리 선택</option>
+              <option value="">카테고리를 선택하세요</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.icon} {category.name}
@@ -111,57 +115,64 @@ export default function AddGoalModal({
             </select>
           </div>
 
+          {/* 제목 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              목표 제목 *
+            <label htmlFor="title" className="block text-sm font-medium text-card-foreground mb-2">
+              목표 제목
             </label>
             <input
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="목표를 입력하세요"
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              placeholder="목표 제목을 입력하세요"
               required
             />
           </div>
 
+          {/* 설명 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              설명
+            <label htmlFor="description" className="block text-sm font-medium text-card-foreground mb-2">
+              설명 (선택사항)
             </label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="목표에 대한 설명을 입력하세요"
             />
           </div>
 
+          {/* 목표 날짜 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              목표 날짜
+            <label htmlFor="target_date" className="block text-sm font-medium text-card-foreground mb-2">
+              목표 날짜 (선택사항)
             </label>
             <input
               type="date"
-              value={targetDate}
-              onChange={(e) => setTargetDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              id="target_date"
+              value={formData.target_date}
+              onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
+              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
             />
           </div>
 
+          {/* 버튼 */}
           <div className="flex space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-border rounded-md text-card-foreground hover:bg-muted transition-colors"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? '추가 중...' : '추가'}
             </button>
