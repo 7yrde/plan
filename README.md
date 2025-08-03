@@ -88,39 +88,51 @@ src/
 
 ## 🚀 시작하기
 
-### 설치
+### 1. 저장소 클론
+```bash
+git clone https://github.com/qkrwogk/7-dashboard.git
+cd 7-dashboard
+```
+
+### 2. 의존성 설치
 ```bash
 npm install
 ```
 
-### 환경 설정
+### 3. 환경 설정 (선택사항)
 ```bash
 # .env.local 파일 생성 (선택사항)
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-secret-key
 ```
 
-### 데이터베이스 초기화
+### 4. 데이터베이스 초기화 ⚠️ 필수
 ```bash
-# 데이터베이스 파일 삭제 후 재생성
-rm -f dashboard.db
+# 데이터베이스 초기화 (처음 실행 시 필수!)
 npx tsx src/lib/init-db.ts
 ```
 
-### 개발 서버 실행
+**중요**: 데이터베이스 파일(`dashboard.db`)은 git에서 제외되어 있으므로, 처음 실행 시 반드시 초기화해야 합니다.
+
+### 5. 개발 서버 실행
 ```bash
 npm run dev
 ```
 
-### 빌드
+브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인하세요.
+
+## 🔧 빌드 및 배포
+
+### 개발 빌드
 ```bash
 npm run build
 ```
 
-## 🔐 로그인 정보
-
-- **사용자명**: `oyako`
-- **비밀번호**: `secretweapon`
+### 프로덕션 빌드
+```bash
+npm run build
+npm start
+```
 
 ## 🎨 테마
 
@@ -157,6 +169,19 @@ npm run build
 - [ ] 에러 핸들링 개선
 - [ ] 테스트 코드 작성
 - [ ] 문서화 보완
+
+## 🚨 문제 해결
+
+### 데이터베이스 오류가 발생하는 경우
+```bash
+# 기존 데이터베이스 삭제 후 재생성
+rm -f dashboard.db
+npx tsx src/lib/init-db.ts
+```
+
+### 첨부파일 관련 오류
+- `uploads/` 폴더는 자동으로 생성됩니다
+- 권한 문제가 있다면 폴더 권한을 확인하세요
 
 ## 📝 라이선스
 
