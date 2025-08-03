@@ -1,14 +1,18 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
+import { useSession, signOut, signIn } from 'next-auth/react';
 import Link from 'next/link';
 import ThemeToggle from './ThemeToggle';
 
 export default function Navigation() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/auth/signin' });
+  };
+
+  const handleSignIn = () => {
+    signIn();
   };
 
   return (
@@ -20,16 +24,30 @@ export default function Navigation() {
           </Link>
           
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-muted-foreground">
-              안녕하세요, {session?.user?.name}님
-            </span>
             <ThemeToggle />
-            <button
-              onClick={handleSignOut}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              로그아웃
-            </button>
+            
+            {status === 'loading' ? (
+              <div className="text-sm text-muted-foreground">로딩 중...</div>
+            ) : session ? (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  안녕하세요, {session.user?.name}님
+                </span>
+                <button
+                  onClick={handleSignOut}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  로그아웃
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleSignIn}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                로그인
+              </button>
+            )}
           </div>
         </div>
       </div>

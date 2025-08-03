@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database';
+import { getDatabase, generateGoalSlug } from '@/lib/database';
 
 export async function GET(request: Request) {
   try {
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const db = getDatabase();
     
     let query = `
-      SELECT g.id, g.category_id, g.year, g.title, g.description, g.target_date,
+      SELECT g.id, g.category_id, g.year, g.slug, g.title, g.description, g.target_date,
              COALESCE(
                CASE 
                  WHEN COUNT(t.id) = 0 THEN 0
@@ -55,17 +55,42 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { category_id, year, title, description, target_date } = await request.json();
+    const { category_id, year, title, description, target_date, start_date } = await request.json();
     
     const db = getDatabase();
+    
+    // 카테고리 slug 조회
+    const category = db.prepare('SELECT slug FROM categories WHERE id = ?').get(category_id) as {
+      slug: string;
+    } | undefined;
+    if (!category) {
+      return NextResponse.json(
+        { error: '카테고리를 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    // 다음 목표 ID 조회
+    const nextIdResult = db.prepare('SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM goals WHERE category_id = ?').get(category_id) as {
+      next_id: number;
+    };
+    const nextId = nextIdResult.next_id;
+    
+    // slug 생성
+    const slug = generateGoalSlug(category.slug, nextId);
+
+    // 목표 생성 (slug 포함)
     const result = db.prepare(`
-      INSERT INTO goals (category_id, year, title, description, target_date)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(category_id, year, title, description, target_date || null);
+      INSERT INTO goals (category_id, year, slug, title, description, target_date, start_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(category_id, year, slug, title, description, target_date || null, start_date || null);
+
+    const goalId = result.lastInsertRowid as number;
 
     return NextResponse.json({ 
       message: '목표가 추가되었습니다.',
-      id: result.lastInsertRowid 
+      id: goalId,
+      slug: slug
     });
   } catch (error) {
     console.error('목표 추가 실패:', error);

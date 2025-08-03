@@ -17,6 +17,7 @@ interface Goal {
   id: number;
   category_id: number;
   year: number;
+  slug: string;
   title: string;
   description: string;
   target_date: string;
@@ -182,7 +183,7 @@ export default function CategoryDetail({ slug }: CategoryDetailProps) {
                     )}
                   </div>
                   <Link
-                    href={`/goal/${goal.id}`}
+                    href={`/goal/${goal.slug}`}
                     className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
                   >
                     상세보기 →

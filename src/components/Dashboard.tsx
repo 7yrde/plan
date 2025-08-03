@@ -18,6 +18,7 @@ interface Goal {
   id: number;
   category_id: number;
   year: number;
+  slug: string;
   title: string;
   description: string;
   target_date: string;

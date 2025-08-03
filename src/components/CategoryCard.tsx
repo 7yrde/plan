@@ -14,6 +14,7 @@ interface Goal {
   id: number;
   category_id: number;
   year: number;
+  slug: string;
   title: string;
   description: string;
   target_date: string;
@@ -72,7 +73,7 @@ export default function CategoryCard({ category, goals }: CategoryCardProps) {
             goals.map((goal) => (
               <Link
                 key={goal.id}
-                href={`/goal/${goal.id}`}
+                href={`/goal/${goal.slug}`}
                 className="block p-3 bg-muted/50 rounded-md hover:bg-muted transition-colors"
               >
                 <div className="flex justify-between items-start">
