@@ -6,7 +6,7 @@
 
 ### 인증 시스템
 - NextAuth.js 기반 사용자 인증
-- 고정 계정: `oyako` / `secretweapon`
+- 고정 계정: `tester` / `secretweapon`
 - 로그인/로그아웃 상태 표시
 
 ### 대시보드

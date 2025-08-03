@@ -136,11 +136,11 @@ export function initDatabase() {
   updateCategory.run('money', '#15803d', '돈');
   updateCategory.run('language', '#15803d', '언어');
 
-  // 기본 사용자 생성 (oyako/secretweapon)
+  // 기본 사용자 생성 (tester/secretweapon)
   const insertUser = db.prepare(`
     INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)
   `);
-  insertUser.run('oyako', 'secretweapon');
+  insertUser.run('tester', 'secretweapon');
 
   return db;
 }
