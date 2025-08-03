@@ -1,6 +1,24 @@
 import { NextResponse } from 'next/server';
 import { getDatabase, generateGoalSlug } from '@/lib/database';
 
+interface GoalRow {
+  id: number;
+  category_id: number;
+  year: number;
+  slug: string;
+  title: string;
+  description: string;
+  content: string;
+  status: string;
+  priority: string;
+  start_date: string;
+  target_date: string;
+  category_name: string;
+  category_slug: string;
+  category_icon: string;
+  progress: number;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -10,7 +28,8 @@ export async function GET(request: Request) {
     const db = getDatabase();
     
     let query = `
-      SELECT g.id, g.category_id, g.year, g.slug, g.title, g.description, g.target_date,
+      SELECT g.id, g.category_id, g.year, g.slug, g.title, g.description, g.content, g.status, g.priority, g.start_date, g.target_date,
+             c.id as category_id, c.name as category_name, c.slug as category_slug, c.icon as category_icon,
              COALESCE(
                CASE 
                  WHEN COUNT(t.id) = 0 THEN 0
@@ -18,6 +37,7 @@ export async function GET(request: Request) {
                END, 0
              ) as progress
       FROM goals g
+      JOIN categories c ON g.category_id = c.id
       LEFT JOIN tasks t ON g.id = t.goal_id
     `;
     
@@ -32,7 +52,6 @@ export async function GET(request: Request) {
     if (category) {
       conditions.push('c.slug = ?');
       params.push(category);
-      query = query.replace('FROM goals g', 'FROM goals g JOIN categories c ON g.category_id = c.id');
     }
     
     if (conditions.length > 0) {
@@ -41,9 +60,29 @@ export async function GET(request: Request) {
     
     query += ' GROUP BY g.id ORDER BY g.created_at DESC';
     
-    const goals = db.prepare(query).all(params);
+    const goals = db.prepare(query).all(params) as GoalRow[];
     
-    return NextResponse.json(goals);
+    // 결과를 원하는 형태로 변환
+    const formattedGoals = goals.map((goal) => ({
+      id: goal.id,
+      slug: goal.slug,
+      title: goal.title,
+      description: goal.description,
+      content: goal.content,
+      status: goal.status,
+      priority: goal.priority,
+      start_date: goal.start_date,
+      target_date: goal.target_date,
+      category: {
+        id: goal.category_id,
+        name: goal.category_name,
+        slug: goal.category_slug,
+        icon: goal.category_icon
+      },
+      progress: goal.progress
+    }));
+    
+    return NextResponse.json(formattedGoals);
   } catch (error) {
     console.error('목표 조회 실패:', error);
     return NextResponse.json(
