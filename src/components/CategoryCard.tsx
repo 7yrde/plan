@@ -8,6 +8,8 @@ interface Category {
   slug: string;
   color: string;
   icon: string;
+  tag?: string;
+  link?: string;
 }
 
 interface Goal {
@@ -27,7 +29,7 @@ interface CategoryCardProps {
 }
 
 export default function CategoryCard({ category, goals }: CategoryCardProps) {
-  const averageProgress = goals.length > 0 
+  const averageProgress = goals.length > 0
     ? Math.round(goals.reduce((sum, goal) => sum + goal.progress, 0) / goals.length)
     : 0;
 
@@ -39,15 +41,35 @@ export default function CategoryCard({ category, goals }: CategoryCardProps) {
           <div className="flex items-center space-x-3">
             <span className="text-2xl">{category.icon}</span>
             <h2 className="text-xl font-semibold text-card-foreground">{category.name}</h2>
+            {category.tag && (
+              <span
+                className="text-xs font-mono px-2 py-0.5 rounded"
+                style={{ backgroundColor: `${category.color}20`, color: category.color, border: `1px solid ${category.color}40` }}
+              >
+                {category.tag}
+              </span>
+            )}
           </div>
-          <Link
-            href={`/category/${category.slug}`}
-            className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
-          >
-            상세보기 →
-          </Link>
+          <div className="flex items-center space-x-3">
+            {category.link && (
+              <a
+                href={category.link}
+                className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                서비스 →
+              </a>
+            )}
+            <Link
+              href={`/category/${category.slug}`}
+              className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+            >
+              상세보기 →
+            </Link>
+          </div>
         </div>
-        
+
         {/* 전체 진척도 */}
         <div className="mt-4">
           <div className="flex justify-between items-center mb-2">
@@ -56,8 +78,8 @@ export default function CategoryCard({ category, goals }: CategoryCardProps) {
           </div>
           <div className="w-full bg-muted rounded-full h-2">
             <div
-              className="h-2 rounded-full transition-all duration-300 bg-primary"
-              style={{ width: `${averageProgress}%` }}
+              className="h-2 rounded-full transition-all duration-300"
+              style={{ width: `${averageProgress}%`, backgroundColor: category.color }}
             />
           </div>
         </div>
@@ -78,9 +100,16 @@ export default function CategoryCard({ category, goals }: CategoryCardProps) {
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h4 className="text-sm font-medium text-card-foreground line-clamp-1">
-                      {goal.title}
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      {goal.slug && (
+                        <span className="text-xs font-mono text-muted-foreground uppercase">
+                          {goal.slug}
+                        </span>
+                      )}
+                      <h4 className="text-sm font-medium text-card-foreground line-clamp-1">
+                        {goal.title}
+                      </h4>
+                    </div>
                     {goal.description && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                         {goal.description}
@@ -94,8 +123,8 @@ export default function CategoryCard({ category, goals }: CategoryCardProps) {
                 <div className="mt-2">
                   <div className="w-full bg-muted rounded-full h-1">
                     <div
-                      className="h-1 rounded-full transition-all duration-300 bg-primary"
-                      style={{ width: `${goal.progress}%` }}
+                      className="h-1 rounded-full transition-all duration-300"
+                      style={{ width: `${goal.progress}%`, backgroundColor: category.color }}
                     />
                   </div>
                 </div>
@@ -106,4 +135,4 @@ export default function CategoryCard({ category, goals }: CategoryCardProps) {
       </div>
     </div>
   );
-} 
+}

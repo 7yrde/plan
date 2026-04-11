@@ -101,6 +101,20 @@ export function initDatabase() {
     // 컬럼이 이미 존재하는 경우 무시
   }
 
+  // categories 테이블에 tag 컬럼 추가 (Jira 태그)
+  try {
+    db.exec('ALTER TABLE categories ADD COLUMN tag TEXT');
+  } catch (error) {
+    // 컬럼이 이미 존재하는 경우 무시
+  }
+
+  // categories 테이블에 link 컬럼 추가 (관련 서비스 경로)
+  try {
+    db.exec('ALTER TABLE categories ADD COLUMN link TEXT');
+  } catch (error) {
+    // 컬럼이 이미 존재하는 경우 무시
+  }
+
   // 기존 goals 테이블에 slug 컬럼 추가 (없는 경우)
   try {
     db.exec('ALTER TABLE goals ADD COLUMN slug TEXT');
@@ -110,11 +124,11 @@ export function initDatabase() {
 
   // 기본 주제 데이터 삽입
   const categories = [
-    { name: '컴퓨터', slug: 'computer', color: '#15803d', icon: '💻' },
-    { name: '음악', slug: 'music', color: '#15803d', icon: '🎵' },
-    { name: '건강', slug: 'health', color: '#15803d', icon: '💪' },
-    { name: '돈', slug: 'money', color: '#15803d', icon: '💰' },
-    { name: '언어', slug: 'language', color: '#15803d', icon: '🌍' }
+    { name: '컴퓨터', slug: 'computer', color: '#4c7cff', icon: '💻', tag: 'CPTR', link: '/proj/' },
+    { name: '음악', slug: 'music', color: '#7b4fff', icon: '🎵', tag: 'MUSC', link: null },
+    { name: '건강', slug: 'health', color: '#4ade80', icon: '💪', tag: 'HLTH', link: '/hlth/' },
+    { name: '돈', slug: 'money', color: '#fbbf24', icon: '💰', tag: 'NVST', link: '/nvst/' },
+    { name: '언어', slug: 'language', color: '#f87171', icon: '🌍', tag: 'LNGG', link: '/lngg/' }
   ];
 
   const insertCategory = db.prepare(`
@@ -125,16 +139,34 @@ export function initDatabase() {
     insertCategory.run(category.name, category.slug, category.color, category.icon);
   });
 
-  // 기존 카테고리의 slug 업데이트
+  // 기존 카테고리의 slug, color, tag, link 업데이트
   const updateCategory = db.prepare(`
-    UPDATE categories SET slug = ?, color = ? WHERE name = ?
+    UPDATE categories SET slug = ?, color = ?, tag = ?, link = ? WHERE name = ?
   `);
-  
-  updateCategory.run('computer', '#15803d', '컴퓨터');
-  updateCategory.run('music', '#15803d', '음악');
-  updateCategory.run('health', '#15803d', '건강');
-  updateCategory.run('money', '#15803d', '돈');
-  updateCategory.run('language', '#15803d', '언어');
+
+  categories.forEach(c => {
+    updateCategory.run(c.slug, c.color, c.tag, c.link, c.name);
+  });
+
+  // 2026 목표 시드 데이터 (Jira PLAN 이슈 기반)
+  const seedGoals = [
+    { categorySlug: 'computer', slug: 'plan-25', year: 2026, title: 'Service Security 전문가 + 전문영역 구축', description: '보안 전문성 확보 및 전문 영역 구축', priority: 'high' },
+    { categorySlug: 'computer', slug: 'plan-26', year: 2026, title: '백엔드 + DevOps (ADOS, 7yr+bxyz)', description: '백엔드 개발 및 DevOps 인프라 구축', priority: 'high' },
+    { categorySlug: 'music', slug: 'plan-27', year: 2026, title: 'DistroKid 음원 10건 발매 (+Suno)', description: '음원 10건 이상 발매', priority: 'high' },
+    { categorySlug: 'music', slug: 'plan-28', year: 2026, title: '영상 20건 업로드', description: '각 채널 영상 20건 이상 업로드', priority: 'high' },
+    { categorySlug: 'money', slug: 'plan-29', year: 2026, title: '주식계좌 여윳돈 4억', description: 'ISA, IRP, 연금저축 포함 주식계좌 4억 목표', priority: 'medium' },
+    { categorySlug: 'health', slug: 'plan-30', year: 2026, title: '헬스 구력 2년, 복싱 6개월 (골격근 38kg)', description: '헬스 지속 및 복싱 시작, 골격근 38kg 달성', priority: 'medium' },
+    { categorySlug: 'language', slug: 'plan-31', year: 2026, title: '일본어, 영어 발전 (수업, 여행, 시험)', description: '어학 능력 향상 - 수업, 여행, 시험 등', priority: 'medium' },
+  ];
+
+  const insertGoal = db.prepare(`
+    INSERT OR IGNORE INTO goals (category_id, year, slug, title, description, priority, start_date, target_date)
+    VALUES ((SELECT id FROM categories WHERE slug = ?), ?, ?, ?, ?, ?, '2026-01-01', '2026-12-31')
+  `);
+
+  seedGoals.forEach(g => {
+    insertGoal.run(g.categorySlug, g.year, g.slug, g.title, g.description, g.priority);
+  });
 
   // 기본 사용자 생성 (test/test)
   const insertUser = db.prepare(`

@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     
     let query = `
       SELECT g.id, g.category_id, g.year, g.slug, g.title, g.description, g.content, g.status, g.priority, g.start_date, g.target_date,
-             c.id as category_id, c.name as category_name, c.slug as category_slug, c.icon as category_icon,
+             c.id as category_id, c.name as category_name, c.slug as category_slug, c.icon as category_icon, c.color as category_color, c.tag as category_tag, c.link as category_link,
              COALESCE(
                CASE 
                  WHEN COUNT(t.id) = 0 THEN 0

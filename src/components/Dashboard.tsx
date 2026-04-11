@@ -12,6 +12,8 @@ interface Category {
   slug: string;
   color: string;
   icon: string;
+  tag?: string;
+  link?: string;
 }
 
 interface Goal {
@@ -46,7 +48,7 @@ export default function Dashboard() {
       if (categoriesRes.ok && goalsRes.ok) {
         const categoriesData = await categoriesRes.json();
         const goalsData = await goalsRes.json();
-        
+
         setCategories(categoriesData);
         setGoals(goalsData);
       }
@@ -61,6 +63,10 @@ export default function Dashboard() {
     fetchDashboardData();
   };
 
+  const overallProgress = goals.length > 0
+    ? Math.round(goals.reduce((sum, g) => sum + g.progress, 0) / goals.length)
+    : 0;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -71,13 +77,50 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* 메인 콘텐츠 */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 연도 선택기 */}
-        <YearSelector 
-          currentYear={currentYear} 
-          onYearChange={setCurrentYear} 
+        <YearSelector
+          currentYear={currentYear}
+          onYearChange={setCurrentYear}
         />
+
+        {/* 전체 진척도 요약 */}
+        <div className="mb-8 p-6 rounded-lg border border-border bg-card">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-card-foreground">{currentYear} 전체 진척도</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {categories.length}개 카테고리 · {goals.length}개 목표
+              </p>
+            </div>
+            <span className="text-3xl font-bold text-primary">{overallProgress}%</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-3">
+            <div
+              className="h-3 rounded-full transition-all duration-500"
+              style={{
+                width: `${overallProgress}%`,
+                background: 'linear-gradient(90deg, #4c7cff, #7b4fff)'
+              }}
+            />
+          </div>
+          {/* 카테고리별 미니 요약 */}
+          <div className="flex flex-wrap gap-4 mt-4">
+            {categories.map(cat => {
+              const catGoals = goals.filter(g => g.category_id === cat.id);
+              const catProgress = catGoals.length > 0
+                ? Math.round(catGoals.reduce((s, g) => s + g.progress, 0) / catGoals.length)
+                : 0;
+              return (
+                <div key={cat.id} className="flex items-center gap-2 text-sm">
+                  <span>{cat.icon}</span>
+                  <span className="text-muted-foreground">{cat.name}</span>
+                  <span className="font-mono text-xs" style={{ color: cat.color }}>{catProgress}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* 새 목표 추가 버튼 */}
         <div className="flex justify-center mb-8">
@@ -115,4 +158,4 @@ export default function Dashboard() {
       />
     </div>
   );
-} 
+}
