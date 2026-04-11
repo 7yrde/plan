@@ -3,6 +3,7 @@
 import CategoryCard from './CategoryCard';
 import YearSelector from './YearSelector';
 import AddGoalModal from './AddGoalModal';
+import JiraStatus from './JiraStatus';
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 
@@ -104,23 +105,36 @@ export default function Dashboard() {
               }}
             />
           </div>
-          {/* 카테고리별 미니 요약 */}
-          <div className="flex flex-wrap gap-4 mt-4">
+          {/* 카테고리별 미니 진척도 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
             {categories.map(cat => {
               const catGoals = goals.filter(g => g.category_id === cat.id);
               const catProgress = catGoals.length > 0
                 ? Math.round(catGoals.reduce((s, g) => s + g.progress, 0) / catGoals.length)
                 : 0;
               return (
-                <div key={cat.id} className="flex items-center gap-2 text-sm">
-                  <span>{cat.icon}</span>
-                  <span className="text-muted-foreground">{cat.name}</span>
-                  <span className="font-mono text-xs" style={{ color: cat.color }}>{catProgress}%</span>
+                <div key={cat.id} className="flex items-center gap-2">
+                  <span className="text-sm shrink-0">{cat.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs text-muted-foreground truncate">{cat.name}</span>
+                      <span className="text-xs font-mono shrink-0" style={{ color: cat.color }}>{catProgress}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-1.5">
+                      <div
+                        className="h-1.5 rounded-full transition-all duration-500"
+                        style={{ width: `${catProgress}%`, backgroundColor: cat.color }}
+                      />
+                    </div>
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
+
+        {/* Jira 연동 상태 */}
+        <JiraStatus />
 
         {/* 새 목표 추가 버튼 */}
         <div className="flex justify-center mb-8">
