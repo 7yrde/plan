@@ -136,11 +136,13 @@ export function initDatabase() {
   updateCategory.run('money', '#15803d', '돈');
   updateCategory.run('language', '#15803d', '언어');
 
-  // 기본 사용자 생성 (tester/secretweapon)
+  // 기본 사용자 생성 (test/test)
   const insertUser = db.prepare(`
     INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)
   `);
-  insertUser.run('tester', 'secretweapon');
+  insertUser.run('test', 'test');
+  // 기존 tester 계정이 있으면 test로 변경
+  db.prepare(`UPDATE users SET username = 'test', password = 'test' WHERE username = 'tester'`).run();
 
   return db;
 }
