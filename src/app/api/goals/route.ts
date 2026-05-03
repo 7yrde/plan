@@ -36,9 +36,9 @@ export async function GET(request: Request) {
                  ELSE ROUND((COUNT(CASE WHEN t.status = 'completed' THEN 1 END) * 100.0) / COUNT(t.id))
                END, 0
              ) as progress
-      FROM goals g
-      JOIN categories c ON g.category_id = c.id
-      LEFT JOIN tasks t ON g.id = t.goal_id
+      FROM plan_goals g
+      JOIN plan_categories c ON g.category_id = c.id
+      LEFT JOIN plan_tasks t ON g.id = t.goal_id
     `;
     
     const conditions = [];
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     const db = getDatabase();
     
     // 카테고리 slug 조회
-    const category = db.prepare('SELECT slug FROM categories WHERE id = ?').get(category_id) as {
+    const category = db.prepare('SELECT slug FROM plan_categories WHERE id = ?').get(category_id) as {
       slug: string;
     } | undefined;
     if (!category) {
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     }
 
     // 다음 목표 ID 조회
-    const nextIdResult = db.prepare('SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM goals WHERE category_id = ?').get(category_id) as {
+    const nextIdResult = db.prepare('SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM plan_goals WHERE category_id = ?').get(category_id) as {
       next_id: number;
     };
     const nextId = nextIdResult.next_id;
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
 
     // 목표 생성 (slug 포함)
     const result = db.prepare(`
-      INSERT INTO goals (category_id, year, slug, title, description, target_date, start_date)
+      INSERT INTO plan_goals (category_id, year, slug, title, description, target_date, start_date)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(category_id, year, slug, title, description, target_date || null, start_date || null);
 

@@ -11,7 +11,7 @@ export async function POST(
     const db = getDatabase();
     
     const result = db.prepare(`
-      UPDATE comments 
+      UPDATE plan_comments 
       SET likes = likes + 1
       WHERE id = ?
     `).run(commentId);

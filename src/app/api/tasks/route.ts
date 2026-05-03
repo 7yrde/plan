@@ -12,14 +12,14 @@ export async function GET(request: Request) {
     if (goalId) {
       tasks = db.prepare(`
         SELECT id, goal_id, title, description, status, priority, created_at, completed_at
-        FROM tasks 
+        FROM plan_tasks 
         WHERE goal_id = ?
         ORDER BY created_at DESC
       `).all(goalId);
     } else {
       tasks = db.prepare(`
         SELECT id, goal_id, title, description, status, priority, created_at, completed_at
-        FROM tasks 
+        FROM plan_tasks 
         ORDER BY created_at DESC
       `).all();
     }
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     
     const db = getDatabase();
     const result = db.prepare(`
-      INSERT INTO tasks (goal_id, title, description, priority)
+      INSERT INTO plan_tasks (goal_id, title, description, priority)
       VALUES (?, ?, ?, ?)
     `).run(goal_id, title, description, priority || 'medium');
 

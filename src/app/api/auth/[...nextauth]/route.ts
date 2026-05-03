@@ -17,7 +17,7 @@ const handler = NextAuth({
 
         const db = getDatabase();
         const user = db.prepare(`
-          SELECT id, username FROM users 
+          SELECT id, username FROM plan_users 
           WHERE username = ? AND password = ?
         `).get(credentials.username, credentials.password) as { id: number; username: string } | undefined;
 

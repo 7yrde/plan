@@ -11,7 +11,7 @@ export async function GET(
     
     const category = db.prepare(`
       SELECT id, name, slug, color, icon, created_at 
-      FROM categories 
+      FROM plan_categories 
       WHERE slug = ?
     `).get(slug);
 

@@ -11,8 +11,8 @@ export async function GET(
     
     const goal = db.prepare(`
       SELECT g.*, c.name as category_name, c.slug as category_slug, c.icon as category_icon
-      FROM goals g
-      JOIN categories c ON g.category_id = c.id
+      FROM plan_goals g
+      JOIN plan_categories c ON g.category_id = c.id
       WHERE g.slug = ?
     `).get(slug) as {
       id: number;
@@ -97,7 +97,7 @@ export async function PATCH(
     values.push(slug);
 
     const result = db.prepare(`
-      UPDATE goals 
+      UPDATE plan_goals 
       SET ${setClause}, updated_at = ?
       WHERE slug = ?
     `).run(...values);

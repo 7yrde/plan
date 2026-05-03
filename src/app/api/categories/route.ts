@@ -6,7 +6,7 @@ export async function GET() {
     const db = getDatabase();
     const categories = db.prepare(`
       SELECT id, name, slug, color, icon, tag, link, created_at
-      FROM categories
+      FROM plan_categories
       ORDER BY id
     `).all();
 

@@ -12,9 +12,9 @@ export async function GET(
     
     const comments = db.prepare(`
       SELECT c.*, u.username
-      FROM comments c
+      FROM plan_comments c
       JOIN users u ON c.user_id = u.id
-      JOIN goals g ON c.goal_id = g.id
+      JOIN plan_goals g ON c.goal_id = g.id
       WHERE g.slug = ?
       ORDER BY c.created_at DESC
     `).all(slug) as Array<{
@@ -62,7 +62,7 @@ export async function POST(
     const db = getDatabase();
     
     // 목표 ID 조회
-    const goal = db.prepare('SELECT id FROM goals WHERE slug = ?').get(slug) as {
+    const goal = db.prepare('SELECT id FROM plan_goals WHERE slug = ?').get(slug) as {
       id: number;
     } | undefined;
     if (!goal) {
@@ -73,7 +73,7 @@ export async function POST(
     }
 
     // 사용자 ID 조회
-    const user = db.prepare('SELECT id FROM users WHERE username = ?').get(session.user.name) as {
+    const user = db.prepare('SELECT id FROM plan_users WHERE username = ?').get(session.user.name) as {
       id: number;
     } | undefined;
     if (!user) {
@@ -84,7 +84,7 @@ export async function POST(
     }
 
     const result = db.prepare(`
-      INSERT INTO comments (goal_id, user_id, content)
+      INSERT INTO plan_comments (goal_id, user_id, content)
       VALUES (?, ?, ?)
     `).run(goal.id, user.id, content);
 

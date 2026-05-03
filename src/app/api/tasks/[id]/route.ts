@@ -14,7 +14,7 @@ export async function PATCH(
     const completedAt = status === 'completed' ? new Date().toISOString() : null;
     
     db.prepare(`
-      UPDATE tasks 
+      UPDATE plan_tasks 
       SET status = ?, completed_at = ?
       WHERE id = ?
     `).run(status, completedAt, taskId);
@@ -40,7 +40,7 @@ export async function DELETE(
     const taskId = parseInt(id);
     
     const db = getDatabase();
-    db.prepare('DELETE FROM tasks WHERE id = ?').run(taskId);
+    db.prepare('DELETE FROM plan_tasks WHERE id = ?').run(taskId);
 
     return NextResponse.json({ 
       message: '세부 계획이 삭제되었습니다.' 

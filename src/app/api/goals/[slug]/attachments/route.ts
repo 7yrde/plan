@@ -13,8 +13,8 @@ export async function GET(
     
     const attachments = db.prepare(`
       SELECT a.*
-      FROM attachments a
-      JOIN goals g ON a.goal_id = g.id
+      FROM plan_attachments a
+      JOIN plan_goals g ON a.goal_id = g.id
       WHERE g.slug = ?
       ORDER BY a.created_at DESC
     `).all(slug) as Array<{
@@ -56,7 +56,7 @@ export async function POST(
     const db = getDatabase();
     
     // 목표 ID 조회
-    const goal = db.prepare('SELECT id FROM goals WHERE slug = ?').get(slug) as {
+    const goal = db.prepare('SELECT id FROM plan_goals WHERE slug = ?').get(slug) as {
       id: number;
     } | undefined;
     if (!goal) {
@@ -82,7 +82,7 @@ export async function POST(
 
     // 데이터베이스에 저장
     const result = db.prepare(`
-      INSERT INTO attachments (goal_id, filename, original_name, file_size, mime_type, file_path)
+      INSERT INTO plan_attachments (goal_id, filename, original_name, file_size, mime_type, file_path)
       VALUES (?, ?, ?, ?, ?, ?)
     `).run(goal.id, filename, file.name, file.size, file.type, filePath);
 

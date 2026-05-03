@@ -12,7 +12,7 @@ export async function GET(
     const db = getDatabase();
     
     const attachment = db.prepare(`
-      SELECT * FROM attachments WHERE id = ?
+      SELECT * FROM plan_attachments WHERE id = ?
     `).get(attachmentId) as {
       id: number;
       file_path: string;

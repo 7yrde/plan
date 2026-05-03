@@ -1,15 +1,16 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 
-const dbPath = path.join(process.cwd(), 'data', 'dashboard.db');
+const dbPath = process.env.DB_PATH || path.resolve(process.cwd(), '..', 'data', '7yr.db');
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
-// 데이터베이스 초기화
 export function initDatabase() {
   const db = new Database(dbPath);
-  
-  // 사용자 테이블
+
   db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS plan_users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
@@ -17,21 +18,21 @@ export function initDatabase() {
     )
   `);
 
-  // 주제 테이블
   db.exec(`
-    CREATE TABLE IF NOT EXISTS categories (
+    CREATE TABLE IF NOT EXISTS plan_categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       slug TEXT UNIQUE NOT NULL,
       color TEXT NOT NULL,
       icon TEXT NOT NULL,
+      tag TEXT,
+      link TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // 목표 테이블
   db.exec(`
-    CREATE TABLE IF NOT EXISTS goals (
+    CREATE TABLE IF NOT EXISTS plan_goals (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       category_id INTEGER NOT NULL,
       year INTEGER NOT NULL,
@@ -45,13 +46,12 @@ export function initDatabase() {
       target_date DATE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (category_id) REFERENCES categories (id)
+      FOREIGN KEY (category_id) REFERENCES plan_categories (id)
     )
   `);
 
-  // 세부 계획 테이블
   db.exec(`
-    CREATE TABLE IF NOT EXISTS tasks (
+    CREATE TABLE IF NOT EXISTS plan_tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       goal_id INTEGER NOT NULL,
       title TEXT NOT NULL,
@@ -60,13 +60,12 @@ export function initDatabase() {
       priority TEXT DEFAULT 'medium',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       completed_at DATETIME,
-      FOREIGN KEY (goal_id) REFERENCES goals (id)
+      FOREIGN KEY (goal_id) REFERENCES plan_goals (id)
     )
   `);
 
-  // 댓글 테이블
   db.exec(`
-    CREATE TABLE IF NOT EXISTS comments (
+    CREATE TABLE IF NOT EXISTS plan_comments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       goal_id INTEGER NOT NULL,
       user_id INTEGER NOT NULL,
@@ -74,14 +73,13 @@ export function initDatabase() {
       likes INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (goal_id) REFERENCES goals (id),
-      FOREIGN KEY (user_id) REFERENCES users (id)
+      FOREIGN KEY (goal_id) REFERENCES plan_goals (id),
+      FOREIGN KEY (user_id) REFERENCES plan_users (id)
     )
   `);
 
-  // 첨부파일 테이블
   db.exec(`
-    CREATE TABLE IF NOT EXISTS attachments (
+    CREATE TABLE IF NOT EXISTS plan_attachments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       goal_id INTEGER NOT NULL,
       filename TEXT NOT NULL,
@@ -90,65 +88,24 @@ export function initDatabase() {
       mime_type TEXT NOT NULL,
       file_path TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (goal_id) REFERENCES goals (id)
+      FOREIGN KEY (goal_id) REFERENCES plan_goals (id)
     )
   `);
 
-  // 기존 categories 테이블에 slug 컬럼 추가 (없는 경우)
-  try {
-    db.exec('ALTER TABLE categories ADD COLUMN slug TEXT');
-  } catch (error) {
-    // 컬럼이 이미 존재하는 경우 무시
-  }
-
-  // categories 테이블에 tag 컬럼 추가 (Jira 태그)
-  try {
-    db.exec('ALTER TABLE categories ADD COLUMN tag TEXT');
-  } catch (error) {
-    // 컬럼이 이미 존재하는 경우 무시
-  }
-
-  // categories 테이블에 link 컬럼 추가 (관련 서비스 경로)
-  try {
-    db.exec('ALTER TABLE categories ADD COLUMN link TEXT');
-  } catch (error) {
-    // 컬럼이 이미 존재하는 경우 무시
-  }
-
-  // 기존 goals 테이블에 slug 컬럼 추가 (없는 경우)
-  try {
-    db.exec('ALTER TABLE goals ADD COLUMN slug TEXT');
-  } catch (error) {
-    // 컬럼이 이미 존재하는 경우 무시
-  }
-
-  // 기본 주제 데이터 삽입
+  // 시드: 카테고리 + 2026 목표 + test 사용자
   const categories = [
     { name: '컴퓨터', slug: 'computer', color: '#4c7cff', icon: '💻', tag: 'CPTR', link: '/proj/' },
-    { name: '음악', slug: 'music', color: '#7b4fff', icon: '🎵', tag: 'MUSC', link: null },
+    { name: '음악', slug: 'music', color: '#7b4fff', icon: '🎵', tag: 'MUSC', link: '/musc/' },
     { name: '건강', slug: 'health', color: '#4ade80', icon: '💪', tag: 'HLTH', link: '/hlth/' },
     { name: '돈', slug: 'money', color: '#fbbf24', icon: '💰', tag: 'NVST', link: '/nvst/' },
-    { name: '언어', slug: 'language', color: '#f87171', icon: '🌍', tag: 'LNGG', link: '/lngg/' }
+    { name: '언어', slug: 'language', color: '#f87171', icon: '🌍', tag: 'LNGG', link: '/lngg/' },
   ];
 
-  const insertCategory = db.prepare(`
-    INSERT OR IGNORE INTO categories (name, slug, color, icon) VALUES (?, ?, ?, ?)
+  const insertCat = db.prepare(`
+    INSERT OR IGNORE INTO plan_categories (name, slug, color, icon, tag, link) VALUES (?, ?, ?, ?, ?, ?)
   `);
+  categories.forEach(c => insertCat.run(c.name, c.slug, c.color, c.icon, c.tag, c.link));
 
-  categories.forEach(category => {
-    insertCategory.run(category.name, category.slug, category.color, category.icon);
-  });
-
-  // 기존 카테고리의 slug, color, tag, link 업데이트
-  const updateCategory = db.prepare(`
-    UPDATE categories SET slug = ?, color = ?, tag = ?, link = ? WHERE name = ?
-  `);
-
-  categories.forEach(c => {
-    updateCategory.run(c.slug, c.color, c.tag, c.link, c.name);
-  });
-
-  // 2026 목표 시드 데이터 (Jira PLAN 이슈 기반)
   const seedGoals = [
     { categorySlug: 'computer', slug: 'plan-25', year: 2026, title: 'Service Security 전문가 + 전문영역 구축', description: '보안 전문성 확보 및 전문 영역 구축', priority: 'high' },
     { categorySlug: 'computer', slug: 'plan-26', year: 2026, title: '백엔드 + DevOps (ADOS, 7yr+bxyz)', description: '백엔드 개발 및 DevOps 인프라 구축', priority: 'high' },
@@ -160,42 +117,27 @@ export function initDatabase() {
   ];
 
   const insertGoal = db.prepare(`
-    INSERT OR IGNORE INTO goals (category_id, year, slug, title, description, priority, start_date, target_date)
-    VALUES ((SELECT id FROM categories WHERE slug = ?), ?, ?, ?, ?, ?, '2026-01-01', '2026-12-31')
+    INSERT OR IGNORE INTO plan_goals (category_id, year, slug, title, description, priority, start_date, target_date)
+    VALUES ((SELECT id FROM plan_categories WHERE slug = ?), ?, ?, ?, ?, ?, '2026-01-01', '2026-12-31')
   `);
+  seedGoals.forEach(g => insertGoal.run(g.categorySlug, g.year, g.slug, g.title, g.description, g.priority));
 
-  seedGoals.forEach(g => {
-    insertGoal.run(g.categorySlug, g.year, g.slug, g.title, g.description, g.priority);
-  });
-
-  // 기본 사용자 생성 (test/test)
-  const insertUser = db.prepare(`
-    INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)
-  `);
-  insertUser.run('test', 'test');
-  // 기존 tester 계정이 있으면 test로 변경
-  db.prepare(`UPDATE users SET username = 'test', password = 'test' WHERE username = 'tester'`).run();
+  // test 사용자
+  db.prepare(`INSERT OR IGNORE INTO plan_users (username, password) VALUES (?, ?)`).run('test', 'test');
 
   return db;
 }
 
-// 목표 slug 생성 함수
 export function generateGoalSlug(categorySlug: string, goalId: number): string {
   return `${categorySlug}-${goalId}`;
 }
 
-// 데이터베이스 인스턴스
 let db: Database.Database;
-
 export function getDatabase() {
-  if (!db) {
-    db = initDatabase();
-  }
+  if (!db) db = initDatabase();
   return db;
 }
 
 export function closeDatabase() {
-  if (db) {
-    db.close();
-  }
-} 
+  if (db) db.close();
+}
