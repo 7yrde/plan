@@ -51,11 +51,15 @@ export interface JiraSearchResult {
 }
 
 export async function searchIssues(jql: string, maxResults = 50): Promise<JiraSearchResult> {
-  return jiraFetch(`/rest/api/3/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=summary,status,priority,assignee,labels,created,updated,description,duedate`);
+  // /rest/api/3/search는 deprecated (410 Gone). /search/jql 사용 (Atlassian Cloud 2024+)
+  const fields = 'summary,status,priority,assignee,labels,created,updated,description,duedate';
+  const result = await jiraFetch(`/rest/api/3/search/jql?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=${fields}`);
+  return { total: result.issues?.length ?? 0, issues: result.issues ?? [] };
 }
 
-export async function getPlanIssues(year = 2026): Promise<JiraSearchResult> {
-  return searchIssues(`project = PLAN AND labels in (${year}) ORDER BY key ASC`);
+export async function getPlanIssues(_year = 2026): Promise<JiraSearchResult> {
+  // 모든 PLAN 프로젝트 이슈를 최신순 (라벨 필터 제거 — 라벨 미사용 시도 0건 방지)
+  return searchIssues(`project = PLAN ORDER BY updated DESC`);
 }
 
 export async function getProjectIssues(projectKey: string, maxResults = 20): Promise<JiraSearchResult> {
